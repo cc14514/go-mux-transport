@@ -51,32 +51,46 @@ func init() { ma.AddProtocol(MuxProtocol) }
 
 type (
 	MuxTranscoder struct{}
-	MuxListener   struct{}
-	MuxTransport  struct {
+	MuxListener   struct {
+		tl transport.Listener
+	}
+	MuxTransport struct {
 		tpt *tcp.TcpTransport
 	}
 )
+
+func (m MuxListener) Accept() (transport.CapableConn, error) {
+	fmt.Println("XXXXXXXXXXXXX")
+	fmt.Println("XXXXXXXXXXXXX")
+	fmt.Println("XXXXXXXXXXXXX")
+	fmt.Println("XXXXXXXXXXXXX")
+	fmt.Println("XXXXXXXXXXXXX")
+	fmt.Println("XXXXXXXXXXXXX")
+	fmt.Println("XXXXXXXXXXXXX")
+	fmt.Println("XXXXXXXXXXXXX")
+	fmt.Println("XXXXXXXXXXXXX")
+	fmt.Println("XXXXXXXXXXXXX")
+	fmt.Println("XXXXXXXXXXXXX")
+	fmt.Println("XXXXXXXXXXXXX")
+	return m.tl.Accept()
+}
+
+func (m MuxListener) Close() error {
+	return m.tl.Close()
+}
+
+func (m MuxListener) Addr() net.Addr {
+	return m.tl.Addr()
+}
+
+func (m MuxListener) Multiaddr() ma.Multiaddr {
+	return m.tl.Multiaddr()
+}
 
 func NewMuxTransport(tpt *tcp.TcpTransport) *MuxTransport {
 	mt := new(MuxTransport)
 	mt.tpt = tpt
 	return mt
-}
-
-func (m MuxListener) Accept() (manet.Conn, error) {
-	panic("implement me")
-}
-
-func (m MuxListener) Close() error {
-	panic("implement me")
-}
-
-func (m MuxListener) Multiaddr() ma.Multiaddr {
-	panic("implement me")
-}
-
-func (m MuxListener) Addr() net.Addr {
-	panic("implement me")
 }
 
 func (m MuxTranscoder) StringToBytes(s string) ([]byte, error) {
@@ -202,7 +216,11 @@ func (m MuxTransport) CanDial(addr ma.Multiaddr) bool {
 }
 
 func (m MuxTransport) Listen(laddr ma.Multiaddr) (transport.Listener, error) {
-	return m.tpt.Listen(laddr)
+	tl, err := m.tpt.Listen(laddr)
+	if err != nil {
+		return nil, err
+	}
+	return &MuxListener{tl}, nil
 }
 
 func (m MuxTransport) Protocols() []int {
@@ -212,33 +230,3 @@ func (m MuxTransport) Protocols() []int {
 func (m MuxTransport) Proxy() bool {
 	return false
 }
-
-/*
-func NewMUXTransport(upgrader *tptu.Upgrader) *MuxTransport {
-	return &MuxTransport{Upgrader: upgrader, ConnectTimeout: DefaultConnectTimeout}
-}
-
-
-func AddMuxTransport(ctx context.Context, h host.Host, upgrader *tptu.Upgrader) error {
-	n, ok := h.Network().(transport.TransportNetwork)
-	if !ok {
-		return fmt.Errorf("%v is not a transport network", h.Network())
-	}
-
-	MuxTransport{}
-	r, err := NewRelay(ctx, h, upgrader, opts...)
-	if err != nil {
-		return err
-	}
-
-	// There's no nice way to handle these errors as we have no way to tear
-	// down the relay.
-	// TODO
-	if err := n.AddTransport(r.Transport()); err != nil {
-		log.Error("failed to add relay transport:", err)
-	} else if err := n.Listen(r.Listener().Multiaddr()); err != nil {
-		log.Error("failed to listen on relay transport:", err)
-	}
-	return nil
-}
-*/
