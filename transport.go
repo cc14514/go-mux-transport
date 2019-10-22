@@ -52,46 +52,21 @@ func init() { ma.AddProtocol(MuxProtocol) }
 type (
 	MuxTranscoder struct{}
 	MuxListener   struct {
-		tl transport.Listener
+		//tl transport.Listener
+		manet.Listener
 	}
 	MuxTransport struct {
 		tpt *tcp.TcpTransport
 	}
 )
 
-func (m MuxListener) Accept() (transport.CapableConn, error) {
-	fmt.Println("AAAAAAAAAAAAAAAAAA")
-	fmt.Println("AAAAAAAAAAAAAAAAAA")
-	fmt.Println("AAAAAAAAAAAAAAAAAA")
-	fmt.Println("AAAAAAAAAAAAAAAAAA")
-	fmt.Println("AAAAAAAAAAAAAAAAAA")
-	fmt.Println("AAAAAAAAAAAAAAAAAA")
-	fmt.Println("AAAAAAAAAAAAAAAAAA")
-	fmt.Println("AAAAAAAAAAAAAAAAAA")
-	fmt.Println("AAAAAAAAAAAAAAAAAA")
-	fmt.Println("AAAAAAAAAAAAAAAAAA")
-	fmt.Println("AAAAAAAAAAAAAAAAAA")
-	fmt.Println("AAAAAAAAAAAAAAAAAA")
-	fmt.Println("AAAAAAAAAAAAAAAAAA")
-	fmt.Println("AAAAAAAAAAAAAAAAAA")
-	fmt.Println("AAAAAAAAAAAAAAAAAA")
-	fmt.Println("AAAAAAAAAAAAAAAAAA")
-	fmt.Println("AAAAAAAAAAAAAAAAAA")
-	fmt.Println("AAAAAAAAAAAAAAAAAA")
-	fmt.Println("AAAAAAAAAAAAAAAAAA")
-	return m.tl.Accept()
-}
-
-func (m MuxListener) Close() error {
-	return m.tl.Close()
-}
-
-func (m MuxListener) Addr() net.Addr {
-	return m.tl.Addr()
-}
-
-func (m MuxListener) Multiaddr() ma.Multiaddr {
-	return m.tl.Multiaddr()
+func (m *MuxListener) Accept() (manet.Conn, error) {
+	fmt.Println("AAAAAAAAAAAAAAAAAAAAAAAAAAAAA")
+	fmt.Println("AAAAAAAAAAAAAAAAAAAAAAAAAAAAA")
+	fmt.Println("AAAAAAAAAAAAAAAAAAAAAAAAAAAAA")
+	fmt.Println("AAAAAAAAAAAAAAAAAAAAAAAAAAAAA")
+	fmt.Println("AAAAAAAAAAAAAAAAAAAAAAAAAAAAA")
+	return m.Listener.Accept()
 }
 
 func NewMuxTransport(tpt *tcp.TcpTransport) *MuxTransport {
@@ -223,27 +198,14 @@ func (m MuxTransport) CanDial(addr ma.Multiaddr) bool {
 }
 
 func (m MuxTransport) Listen(laddr ma.Multiaddr) (transport.Listener, error) {
-	fmt.Println("LLLLLLLLLLLLLLLLLLLLLLLLLLL",laddr)
-	fmt.Println("LLLLLLLLLLLLLLLLLLLLLLLLLLL",laddr)
-	fmt.Println("LLLLLLLLLLLLLLLLLLLLLLLLLLL",laddr)
-	fmt.Println("LLLLLLLLLLLLLLLLLLLLLLLLLLL",laddr)
-	fmt.Println("LLLLLLLLLLLLLLLLLLLLLLLLLLL",laddr)
-	fmt.Println("LLLLLLLLLLLLLLLLLLLLLLLLLLL",laddr)
-	fmt.Println("LLLLLLLLLLLLLLLLLLLLLLLLLLL",laddr)
-	fmt.Println("LLLLLLLLLLLLLLLLLLLLLLLLLLL",laddr)
-	fmt.Println("LLLLLLLLLLLLLLLLLLLLLLLLLLL",laddr)
-	fmt.Println("LLLLLLLLLLLLLLLLLLLLLLLLLLL",laddr)
-	fmt.Println("LLLLLLLLLLLLLLLLLLLLLLLLLLL",laddr)
-	fmt.Println("LLLLLLLLLLLLLLLLLLLLLLLLLLL",laddr)
-	fmt.Println("LLLLLLLLLLLLLLLLLLLLLLLLLLL",laddr)
-	fmt.Println("LLLLLLLLLLLLLLLLLLLLLLLLLLL",laddr)
-	fmt.Println("LLLLLLLLLLLLLLLLLLLLLLLLLLL",laddr)
-	fmt.Println("LLLLLLLLLLLLLLLLLLLLLLLLLLL",laddr)
-	tl, err := m.tpt.Listen(laddr)
+	fmt.Println("LLLLLL", laddr)
+	fmt.Println("LLLLLL", laddr)
+	list, err := m.tpt.GetListen()
 	if err != nil {
 		return nil, err
 	}
-	return &MuxListener{tl}, nil
+	ml := &MuxListener{Listener: list}
+	return m.tpt.Upgrader.UpgradeListener(m, ml), nil
 }
 
 func (m MuxTransport) Protocols() []int {

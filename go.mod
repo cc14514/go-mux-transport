@@ -14,3 +14,5 @@ require (
 )
 
 go 1.13
+
+replace github.com/libp2p/go-tcp-transport => /Users/liangc/app/gohome/go-mux-transport/libs/go-tcp-transport
