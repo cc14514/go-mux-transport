@@ -171,7 +171,7 @@ func dialMux(ip string, fport, tport int) (conn net.Conn, err error) {
 		fmt.Println("dialMux-error-2", "err", err, "ip", ip, "fport", fport)
 		return
 	}
-	fmt.Println("-- mux -->", buff[:t])
+	fmt.Println("-- mux -->", string(buff[:t]))
 	if !bytes.Contains(buff[:t], []byte("HTTP/1.1 200")) {
 		fmt.Println("dialMux-error-3", "err", err, "ip", ip, "fport", fport)
 		return
