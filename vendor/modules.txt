@@ -1,0 +1,80 @@
+# github.com/btcsuite/btcd v0.0.0-20190213025234-306aecffea32
+github.com/btcsuite/btcd/btcec
+# github.com/gogo/protobuf v1.2.1
+github.com/gogo/protobuf/proto
+# github.com/ipfs/go-log v0.0.1
+github.com/ipfs/go-log
+github.com/ipfs/go-log/tracer
+github.com/ipfs/go-log/tracer/wire
+github.com/ipfs/go-log/writer
+# github.com/jbenet/go-temp-err-catcher v0.0.0-20150120210811-aac704a3f4f2
+github.com/jbenet/go-temp-err-catcher
+# github.com/jbenet/goprocess v0.1.3
+github.com/jbenet/goprocess
+# github.com/libp2p/go-libp2p-core v0.0.1
+github.com/libp2p/go-libp2p-core/crypto
+github.com/libp2p/go-libp2p-core/crypto/pb
+github.com/libp2p/go-libp2p-core/mux
+github.com/libp2p/go-libp2p-core/network
+github.com/libp2p/go-libp2p-core/peer
+github.com/libp2p/go-libp2p-core/peerstore
+github.com/libp2p/go-libp2p-core/pnet
+github.com/libp2p/go-libp2p-core/protocol
+github.com/libp2p/go-libp2p-core/sec
+github.com/libp2p/go-libp2p-core/transport
+# github.com/libp2p/go-libp2p-transport-upgrader v0.1.1
+github.com/libp2p/go-libp2p-transport-upgrader
+# github.com/libp2p/go-maddr-filter v0.0.4
+github.com/libp2p/go-maddr-filter
+# github.com/libp2p/go-reuseport v0.0.1
+github.com/libp2p/go-reuseport
+# github.com/libp2p/go-reuseport-transport v0.0.2
+github.com/libp2p/go-reuseport-transport
+# github.com/libp2p/go-tcp-transport v0.1.0 => ./libs/go-tcp-transport
+github.com/libp2p/go-tcp-transport
+# github.com/mattn/go-colorable v0.1.1
+github.com/mattn/go-colorable
+# github.com/mattn/go-isatty v0.0.5
+github.com/mattn/go-isatty
+# github.com/minio/blake2b-simd v0.0.0-20160723061019-3f5f724cb5b1
+github.com/minio/blake2b-simd
+# github.com/minio/sha256-simd v0.1.0
+github.com/minio/sha256-simd
+# github.com/mr-tron/base58 v1.1.2
+github.com/mr-tron/base58/base58
+# github.com/multiformats/go-multiaddr v0.0.4
+github.com/multiformats/go-multiaddr
+# github.com/multiformats/go-multiaddr-dns v0.0.2
+github.com/multiformats/go-multiaddr-dns
+# github.com/multiformats/go-multiaddr-fmt v0.0.1
+github.com/multiformats/go-multiaddr-fmt
+# github.com/multiformats/go-multiaddr-net v0.0.1
+github.com/multiformats/go-multiaddr-net
+# github.com/multiformats/go-multihash v0.0.5
+github.com/multiformats/go-multihash
+# github.com/opentracing/opentracing-go v1.0.2
+github.com/opentracing/opentracing-go
+github.com/opentracing/opentracing-go/ext
+github.com/opentracing/opentracing-go/log
+# github.com/pkg/errors v0.8.1
+github.com/pkg/errors
+# github.com/spacemonkeygo/openssl v0.0.0-20181017203307-c2dcc5cca94a
+github.com/spacemonkeygo/openssl
+github.com/spacemonkeygo/openssl/utils
+# github.com/spacemonkeygo/spacelog v0.0.0-20180420211403-2296661a0572
+github.com/spacemonkeygo/spacelog
+# github.com/spaolacci/murmur3 v1.1.0
+github.com/spaolacci/murmur3
+# github.com/whyrusleeping/go-logging v0.0.0-20170515211332-0457bb6b88fc
+github.com/whyrusleeping/go-logging
+# golang.org/x/crypto v0.0.0-20190513172903-22d7a77e9e5f
+golang.org/x/crypto/blake2s
+golang.org/x/crypto/ed25519
+golang.org/x/crypto/ed25519/internal/edwards25519
+golang.org/x/crypto/sha3
+# golang.org/x/net v0.0.0-20190404232315-eb5bcb51f2a3
+golang.org/x/net/context
+# golang.org/x/sys v0.0.0-20190412213103-97732733099d
+golang.org/x/sys/cpu
+golang.org/x/sys/unix
+golang.org/x/sys/windows

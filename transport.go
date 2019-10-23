@@ -30,7 +30,11 @@ import (
 	"github.com/libp2p/go-tcp-transport"
 	ma "github.com/multiformats/go-multiaddr"
 	manet "github.com/multiformats/go-multiaddr-net"
+	"io"
+	"io/ioutil"
+	"log"
 	"net"
+	"net/http"
 	"strconv"
 	"strings"
 	"time"
@@ -53,6 +57,7 @@ type (
 	MuxTranscoder struct{}
 	MuxListener   struct {
 		//tl transport.Listener
+		maddr ma.Multiaddr
 		manet.Listener
 	}
 	MuxTransport struct {
@@ -60,12 +65,11 @@ type (
 	}
 )
 
+func (m *MuxListener) Multiaddr() ma.Multiaddr {
+	return m.maddr
+}
+
 func (m *MuxListener) Accept() (manet.Conn, error) {
-	fmt.Println("AAAAAAAAAAAAAAAAAAAAAAAAAAAAA")
-	fmt.Println("AAAAAAAAAAAAAAAAAAAAAAAAAAAAA")
-	fmt.Println("AAAAAAAAAAAAAAAAAAAAAAAAAAAAA")
-	fmt.Println("AAAAAAAAAAAAAAAAAAAAAAAAAAAAA")
-	fmt.Println("AAAAAAAAAAAAAAAAAAAAAAAAAAAAA")
 	return m.Listener.Accept()
 }
 
@@ -87,7 +91,6 @@ func (m MuxTranscoder) StringToBytes(s string) ([]byte, error) {
 		return nil, err
 	}
 	r := append(b1, b2...)
-	fmt.Println("StringToBytes : ", s, r)
 	return r, nil
 }
 
@@ -101,7 +104,6 @@ func (m MuxTranscoder) BytesToString(b []byte) (string, error) {
 		return "", err
 	}
 	r := fmt.Sprintf("%s:%s", s1, s2)
-	fmt.Println("BytesToString : ", b, r)
 	return r, nil
 }
 
@@ -148,28 +150,60 @@ func parseMuxargs(raddr ma.Multiaddr) (ip string, fp, tp int, err error) {
 	return
 }
 
+func readHttpPacket(conn io.Reader) (txt []byte, err error) {
+	var (
+		rtn    bool
+		buff   = make([]byte, 1)
+		fs, fe = make([]int, 2), make([]int, 2)
+	)
+	for {
+		_, err = conn.Read(buff)
+		if err != nil {
+			return
+		}
+		pos := len(txt)
+		switch buff[0] {
+		case '\r':
+			fs[0], fs[1] = pos, '\r'
+		case '\n':
+			if pos > 0 && pos-2 == fe[0] && pos-1 == fs[0] {
+				//end
+				rtn = true
+			}
+			fe[0], fe[1] = pos, '\n'
+		}
+		txt = append(txt, buff[0])
+		if rtn {
+			return
+		}
+	}
+
+	return nil, nil
+}
+
 func dialMux(ip string, fport, tport int) (conn net.Conn, err error) {
 	var (
-		t      int
+		txt    []byte
 		dialer = &net.Dialer{Timeout: 15 * time.Second}
 		addr   = &net.TCPAddr{IP: net.ParseIP(ip), Port: fport}
 		req1   = fmt.Sprintf("CONNECT conn://localhost:%d HTTP/1.1\r\nHost: localhost:%d\r\n\r\n", tport, tport)
-		buff   = make([]byte, 2048)
 	)
 	conn, err = dialer.Dial("tcp", addr.String())
 	if err != nil {
-		fmt.Println("dialMux-error-1", "err", err, "ip", ip, "fport", fport)
+		log.Println("dialMux-error-1", "err", err, "ip", ip, "fport", fport)
 		return
 	}
 	_, err = conn.Write([]byte(req1))
-	t, err = conn.Read(buff)
 	if err != nil {
-		fmt.Println("dialMux-error-2", "err", err, "ip", ip, "fport", fport)
 		return
 	}
-	fmt.Println("-- mux [v1] -->", string(buff[:t]))
-	if !bytes.Contains(buff[:t], []byte("HTTP/1.1 200")) {
-		fmt.Println("dialMux-error-3", "err", err, "ip", ip, "fport", fport)
+	txt, err = readHttpPacket(conn)
+	if err != nil {
+		log.Println("dialMux-error-2", "err", err)
+		return
+	}
+	if !bytes.Contains(txt[:], []byte("HTTP/1.1 200")) {
+		log.Println("dialMux-error-3", "err", err, "ip", ip, "fport", fport)
 		return
 	}
 	return
@@ -180,7 +214,7 @@ func (m MuxTransport) Dial(ctx context.Context, raddr ma.Multiaddr, p peer.ID) (
 	if err != nil {
 		return nil, err
 	}
-	fmt.Println(ip, fport, tport)
+	log.Println("dialMux", "ip", ip, "fport", fport, "tport", tport)
 	c, err := dialMux(ip, fport, tport)
 	if err != nil {
 		return nil, err
@@ -198,13 +232,12 @@ func (m MuxTransport) CanDial(addr ma.Multiaddr) bool {
 }
 
 func (m MuxTransport) Listen(laddr ma.Multiaddr) (transport.Listener, error) {
-	fmt.Println("LLLLLL", laddr)
-	fmt.Println("LLLLLL", laddr)
 	list, err := m.tpt.GetListen()
 	if err != nil {
 		return nil, err
 	}
 	ml := &MuxListener{Listener: list}
+	ml.maddr = laddr
 	return m.tpt.Upgrader.UpgradeListener(m, ml), nil
 }
 
@@ -214,4 +247,109 @@ func (m MuxTransport) Protocols() []int {
 
 func (m MuxTransport) Proxy() bool {
 	return false
+}
+
+func MuxAddress(maddrs []ma.Multiaddr) (muxaddr ma.Multiaddr, ok bool) {
+	for _, maddr := range maddrs {
+		if maddr == nil {
+			continue
+		}
+		ok, _, _, _ = SplitMuxAddr(maddr)
+		if ok {
+			muxaddr = maddr
+			return
+		}
+	}
+	return
+}
+
+func SplitMuxAddr(maddr ma.Multiaddr) (ok bool, ip string, fport, tport int) {
+	if maddr == nil {
+		return
+	}
+	var muxAddr ma.Multiaddr
+	addrs := ma.Split(maddr)
+	for _, maddr := range addrs {
+		if maddr.Protocols()[0].Code == MuxProtocol.Code {
+			ok = true
+			muxAddr = maddr
+			break
+		}
+	}
+	if ok {
+		s1, _ := ma.TranscoderPort.BytesToString(muxAddr.Bytes()[2:4])
+		s2, _ := ma.TranscoderPort.BytesToString(muxAddr.Bytes()[4:6])
+		fport, _ = strconv.Atoi(s1)
+		tport, _ = strconv.Atoi(s2)
+		_, ip, _ = manet.DialArgs(maddr)
+	}
+	return
+}
+
+func MaddrsToPorts(maddrs []ma.Multiaddr) map[string]string {
+	portmap := make(map[string]string)
+	for _, maddr := range maddrs {
+		if maddr == nil {
+			continue
+		}
+		if ok, _, fport, tport := SplitMuxAddr(maddr); ok {
+			portmap[fmt.Sprintf("%d:%d", fport, tport)] = MuxProtocol.Name
+		} else {
+			p, h, err := manet.DialArgs(maddr)
+			if err == nil && strings.Contains(h, ":") {
+				net := p
+				switch p {
+				case "tcp4", "tcp6":
+					net = "tcp"
+				case "udp4", "udp6":
+					net = "udp"
+				}
+				portmap[strings.Split(h, ":")[1]] = net
+			}
+		}
+	}
+	return portmap
+}
+func MaddrsToIps(maddrs []ma.Multiaddr) map[string]string {
+	ipmap := make(map[string]string)
+	for _, maddr := range maddrs {
+		if maddr != nil {
+			x, y, e := manet.DialArgs(maddr)
+			if e == nil {
+				ipmap[strings.Split(y, ":")[0]] = x
+			}
+		}
+	}
+	return ipmap
+}
+
+func GetRealIP(r, l ma.Multiaddr, muxport int) (string, error) {
+	_, a, err := manet.DialArgs(r)
+	if err != nil {
+		return "", err
+	}
+	_, b, err := manet.DialArgs(l)
+	if err != nil {
+		return "", err
+	}
+	session := fmt.Sprintf("%s%s", strings.Split(a, ":")[1], strings.Split(b, ":")[1])
+	log.Println("get-realip-from-netmux", "mux", r, "local", l, "session", session)
+
+	url := fmt.Sprintf("http://127.0.0.1:%d/chainmux/realip", muxport)
+	client := &http.Client{}
+	request, _ := http.NewRequest("GET", url, nil)
+	request.Header.Add("sessionid", session)
+	response, err := client.Do(request)
+	log.Println("- get realip -> err", err, "sessionid", request.Header.Get("sessionid"))
+	if err != nil {
+		return "", err
+	} else {
+		defer response.Body.Close()
+		data, err := ioutil.ReadAll(response.Body)
+		if response.StatusCode == 200 {
+			log.Println("<- get realip -", "err", err, "stateCode", response.StatusCode, "body", string(data))
+			return string(data), nil
+		}
+		return "", fmt.Errorf("get realip fail : statecode %d", response.StatusCode)
+	}
 }
